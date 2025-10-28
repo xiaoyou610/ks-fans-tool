@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ks刷粉丝助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "PingFang SC", sans-serif;
+        }
+        body {
+            position: relative;
+            overflow: hidden;
+            background-color: #000;
+            min-height: 100vh;
+        }
+        /* 粒子背景样式 */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* 电击特效样式 */
+        .shock-effect {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(0, 255, 255, 0.8);
+            pointer-events: none;
+            animation: shock 0.8s ease-out forwards;
+            z-index: 2;
+        }
+        @keyframes shock {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        /* 主体容器样式 */
+        .container {
+            position: relative;
+            z-index: 3;
+            max-width: 500px;
+            width: 100%;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+        h1 {
+            color: #00ffff;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        .feedback-input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 150px;
+            margin-bottom: 20px;
+        }
+        /* 新增：选择框样式 */
+        .function-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #00ffff;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            font-size: 16px;
+            margin-bottom: 25px; /* 与下方按钮保持间距 */
+            appearance: none; /* 清除默认样式 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2300ffff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+        }
+        /* 按钮容器：整体下移通过margin-top实现 */
+        .btn-group {
+            margin-top: 15px; /* 按钮整体向下移动15px，可调整数值控制下移幅度 */
+        }
+        /* 按钮样式 */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .submit-btn {
+            background-color: #00ffff;
+            color: #000;
+        }
+        .submit-btn:hover {
+            background-color: #00cccc;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+        }
+        .btn1 { background-color: #ff0066; }
+        .btn1:hover { background-color: #cc0055; box-shadow: 0 0 10px rgba(255, 0, 102, 0.7); }
+        .btn2 { background-color: #ffcc00; color: #000; }
+        .btn2:hover { background-color: #e6b800; box-shadow: 0 0 10px rgba(255, 204, 0, 0.7); }
+        .btn3 { background-color: #00cc66; }
+        .btn3:hover { background-color: #00b355; box-shadow: 0 0 10px rgba(0, 204, 102, 0.7); }
+        .btn4 { background-color: #ff4444; }
+        .btn4:hover { background-color: #cc0000; box-shadow: 0 0 10px rgba(255, 68, 68, 0.7); }
+        /* 成功提示（原反馈提示） */
+        .success-tip {
+            color: #00ff00;
+            text-align: center;
+            margin-top: 15px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .success-tip.show { opacity: 1; }
+        /* 进度条+百分比容器（底部1/6位置） */
+        .progress-group {
+            position: fixed;
+            left: 50%;
+            top: calc(100% - 100vh/6);
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px; /* 进度条与百分比间距 */
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .progress-group.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* 进度条本体 */
+        .progress-bar {
+            width: 80%;
+            max-width: 500px;
+            height: 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #00ff00;
+            border-radius: 6px;
+            transition: width 0.09s linear; /* 2秒内平滑加载100% */
+        }
+        /* 进度百分比文字（跟随进度变化） */
+        .progress-num {
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            min-width: 45px; /* 固定宽度避免跳动 */
+            text-align: left;
+        }
+        /* 彩色"线路正常"文字（加载完成后显示） */
+        .line-normal {
+            position: fixed;
+            left: 50%;
+            top: calc(100% - 100vh/6 - 45px); /* 进度条上方45px，避免重叠 */
+            transform: translateX(-50%) scale(0.8);
+            font-size: 26px;
+            font-weight: bold;
+            z-index: 9999;
+            opacity: 0;
+            transition: all 0.5s ease;
+            /* 四个字渐变彩色效果 */
+            background: linear-gradient(90deg, #ff0066, #ffcc00, #00ff00, #00ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .line-normal.show {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+        /* 图片文字悬浮窗（购买卡密按钮用，新增微信/支付宝按钮） */
+        .img-text-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 90%;
+            max-width: 350px; /* 适配图片尺寸 */
+            max-height: 80vh; /* 限制最大高度，避免超出屏幕 */
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ffff;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            overflow-y: auto; /* 内容过多时可滚动 */
+        }
+        .img-text-modal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            z-index: 10001; /* 确保关闭按钮在最上层 */
+        }
+        .modal-close:hover {
+            color: #ff0000;
+        }
+        /* 双图片容器：纵向排列，平均分配上方空间 */
+        .modal-img-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* 两张图片纵向间距 */
+            margin-bottom: 15px;
+            height: 100%; /* 占满悬浮窗上方可用空间 */
+        }
+        /* 新图片样式：平均分配高度，保持比例 */
+        .modal-img {
+            flex: 1; /* 两张图片平均分配容器高度 */
+            width: 100%; /* 宽度铺满容器 */
+            object-fit: contain; /* 保持图片清晰不拉伸 */
+            border-radius: 8px;
+        }
+        /* 图片标题：匹配图片内容 */
+        .img-title {
+            color: #00ffff;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        /* 微信/支付宝按钮容器 */
+        .app-btn-group {
+            display: flex;
+            gap: 10px; /* 两个按钮间距 */
+            margin: 15px 0;
+        }
+        /* 微信/支付宝按钮样式（确保大小一致） */
+        .app-btn {
+            flex: 1; /* 强制各占50%宽度，大小一致 */
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px; /* 图标与文字间距固定，避免宽度偏差 */
+            min-height: 48px; /* 固定最小高度，确保高度一致 */
+        }
+        .wechat-btn {
+            background-color: #07C160; /* 微信绿，匹配图片标题 */
+            color: #fff;
+        }
+        .wechat-btn:hover {
+            background-color: #06A852;
+            box-shadow: 0 0 8px rgba(7, 193, 96, 0.6);
+        }
+        .alipay-btn {
+            background-color: #1677FF; /* 支付宝蓝，匹配图片标题 */
+            color: #fff;
+        }
+        .alipay-btn:hover {
+            background-color: #1466D9;
+            box-shadow: 0 0 8px rgba(22, 119, 255, 0.6);
+        }
+        .modal-desc {
+            color: #fff;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: left;
+            margin-top: 10px;
+        }
+        .modal-desc span {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        /* 购买卡密悬浮窗（验证卡密按钮用） */
+        .buy-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 90%;
+            max-width: 400px;
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00ff00;
+            border-radius: 12px;
+            padding: 25px;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .buy-modal.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        .buy-title {
+            color: #00ff00;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .buy-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #00ff00;
+            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .buy-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #00ff00;
+            color: #000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .buy-btn:hover {
+            background-color: #00cc00;
+        }
+        /* 通用悬浮窗遮罩 */
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-mask.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+    <!-- 引入字体图标（用于微信/支付宝图标，无需额外资源） -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>ks刷粉丝助手</h1>
+        <textarea class="feedback-input" placeholder="请粘贴您的作品链接(包含文字）ks和dy通用"></textarea>
+        
+        <!-- 新增：选择框（含五个选项） -->
+        <select class="function-select" id="functionSelect">
+            <option value="select">请选择功能类型</option>
+            <option value="speed刷粉丝">ks/dy速刷fs(约30分钟=1w)</option>
+            <option value="speed刷点赞">ks/dy速刷贊(约5分钟=5w）</option>
+            <option value="speed刷评论">
+           ks/dy速刷评论(5秒一条评论）</option>
+            <option value="cardVerify">ks/dy转发(1秒10个转发）</option>
+            <option value="cardBuy">❗以上功能需要验证卡密</option>
+        </select>
+
+        <!-- 按钮容器：整体下移 -->
+        <div class="btn-group">
+            <button class="btn submit-btn" onclick="handleProgressBtn(submitFeedback)">开始速刷</button>
+            <button class="btn btn1" onclick="handleProgressBtn()">开始速刷(备用）</button>
+            <button class="btn btn3" onclick="openBuyModal()">验证卡密</button>
+            <button class="btn btn2" onclick="openImgTextModal()">购买卡密</button> <!-- 悬浮窗含跳转按钮 -->
+            <button class="btn btn4" onclick="closeCurrentPage()">退出软件</button>
+        </div>
+
+        <div class="success-tip" id="successTip">请先验证卡密</div>
+    </div>
+    <!-- 进度条+百分比组件 -->
+    <div class="progress-group" id="progressGroup">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-num" id="progressNum">0%</div>
+    </div>
+    <!-- 彩色"线路正常"文字组件 -->
+    <div class="line-normal" id="lineNormal">线路正常</div>
+    <!-- 图片文字悬浮窗（购买卡密按钮用，新增微信/支付宝跳转按钮） -->
+    <div class="modal-mask" id="imgTextMask" onclick="closeImgTextModal()"></div>
+    <div class="img-text-modal" id="imgTextModal">
+        <span class="modal-close" onclick="closeImgTextModal()">&times;</span>
+        <!-- 纵向图片容器：保留你改进后的图片和标题 -->
+        <div class="modal-img-group">
+            <div>
+                <div class="img-title">支付宝支付(0手续费）<br>请仔细阅读下方底部文字</div>
+                <img src="https://i.imgs.ovh/2025/10/27/7lBkfH.jpeg" alt="支付宝支付" class="modal-img">
+            </div>
+            <div>
+                <div class="img-title">微信支付(0手续费）</div>
+                <img src="https://i.imgs.ovh/2025/10/27/7lBAQA.jpeg" alt="微信支付" class="modal-img">
+            </div>
+        </div>
+        <!-- 微信/支付宝按钮（已确保大小一致） -->
+        <div class="app-btn-group">
+            <button class="app-btn alipay-btn" onclick="openAlipay()">
+                <<i class="fa fa-credit-card"></</i> 打开支付宝
+            </button>
+            <button class="app-btn wechat-btn" onclick="openWeChat()">
+                <<i class="fa fa-weixin"></</i> 打开微信
+            </button>
+        </div>
+        <!-- 保留你改进后的文字说明 -->
+        <div class="modal-desc">
+            注:长按即可保存图片<br>
+            1. 月卡15      永久卡25（支付→接收卡密）<br>
+            2. 永久卡为无限使用，月卡为31天使用权<br>
+            3. 支持微信/支付宝支付，支付后10秒内发送卡密<br>
+            4. 未成年禁止下单，仅供学习交流，违法使用自行承担责任
+        </div>
+    </div>
+    <!-- 购买卡密悬浮窗（验证卡密按钮用） -->
+    <div class="modal-mask" id="buyMask" onclick="closeBuyModal()"></div>
+    <div class="buy-modal" id="buyModal">
+        <span class="modal-close" onclick="closeBuyModal()">&times;</span>
+        <h3 class="buy-title">验证卡密</h3>
+        <input type="text" class="buy-input" placeholder="请输入16位卡密（不要有空格哦！👿）" id="buyCountInput">
+        <button class="buy-btn" onclick="confirmBuy()">确认验证</button>
+    </div>
+    <script>
+        // 粒子背景生成
+        function createParticles() {
+            const particleCount = 150;
+            const body = document.body;
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 3 + 1;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                particle.style.animation = `float ${Math.random() * 10 + 5}s infinite ease-in-out`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                body.appendChild(particle);
+            }
+        }
+        // 粒子浮动动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes float {
+                0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+                50% { transform: translateY(-20px) scale(1.2); opacity: 0.8; }
+            }
+        `;
+        document.head.appendChild(style);
+        // 电击特效（所有点击触发）
+        document.addEventListener('click', (e) => {
+            const shock = document.createElement('div');
+            shock.classList.add('shock-effect');
+            shock.style.left = `${e.clientX - 50}px`;
+            shock.style.top = `${e.clientY - 50}px`;
+            shock.style.width = '100px';
+            shock.style.height = '100px';
+            document.body.appendChild(shock);
+            setTimeout(() => shock.remove(), 800);
+        });
+        // 提交反馈并保存到本地（原功能）
+        function submitFeedback() {
+            const input = document.querySelector('.feedback-input');
+            const val = input.value.trim();
+            if (val) {
+                localStorage.setItem('ksLink', val);
+                const tip = document.getElementById('successTip');
+                tip.classList.add('show');
+                setTimeout(() => tip.classList.remove('show'), 2000);
+                input.value = '';
+            }
+        }
+        // 前两个按钮：进度条+百分比+彩色文字逻辑
+        function handleProgressBtn(customFn) {
+            const progressGroup = document.getElementById('progressGroup');
+            const progressFill = document.getElementById('progressFill');
+            const progressNum = document.getElementById('progressNum');
+            const lineNormal = document.getElementById('lineNormal');
+            // 初始化状态（重置所有元素）
+            progressFill.style.width = '0%';
+            progressNum.textContent = '0%';
+            progressGroup.classList.remove('active');
+            lineNormal.classList.remove('show');
+            // 1. 显示进度条，开始2秒加载（0%→100%）
+            progressGroup.classList.add('active');
+            let progress = 0;
+            const timer = setInterval(() => {
+                progress += 1;
+                // 进度条与百分比实时同步
+                progressFill.style.width = `${progress}%`;
+                progressNum.textContent = `${progress}%`;
+                // 2. 加载完成（2秒后）
+                if (progress >= 100) {
+                    clearInterval(timer);
+                    // 执行自定义函数（如提交反馈）
+                    if (typeof customFn === 'function') customFn();
+                    // 隐藏进度条（仅显示2秒）
+                    progressGroup.classList.remove('active');
+                    // 显示彩色"线路正常"文字，保持2秒后隐藏
+                    lineNormal.classList.add('show');
+                    setTimeout(() => lineNormal.classList.remove('show'), 2000);
+                }
+            }, 20); // 20ms更新1次，2000ms（2秒）完成100%
+        }
+        // 最后一个按钮-关闭当前网页标签页
+        function closeCurrentPage() {
+            window.close();
+            setTimeout(() => {
+                alert('若网页未自动关闭，请手动关闭当前标签页~');
+            }, 500);
+        }
+        // 打开图片文字悬浮窗（购买卡密按钮用）
+        function openImgTextModal() {
+            const modal = document.getElementById('imgTextModal');
+            const mask = document.getElementById('imgTextMask');
+            modal.classList.add('active');
+            mask.classList.add('active');
+        }
+        // 关闭图片文字悬浮窗
+        function closeImgTextModal() {
+            const modal = document.getElementById('imgTextModal');
+            const mask = document.getElementById('imgTextMask');
+            modal.classList.remove('active');
+            mask.classList.remove('active');
+        }
+        // 打开验证卡密悬浮窗（验证卡密按钮用）
+        function openBuyModal() {
+            const modal = document.getElementById('buyModal');
+            const mask = document.getElementById('buyMask');
+            modal.classList.add('active');
+            mask.classList.add('active');
+            document.getElementById('buyCountInput').value = ''; // 清空输入框
+        }
+        // 关闭验证卡密悬浮窗
+        function closeBuyModal() {
+            const modal = document.getElementById('buyModal');
+            const mask = document.getElementById('buyMask');
+            modal.classList.remove('active');
+            mask.classList.remove('active');
+        }
+        // 确认验证卡密逻辑
+        function confirmBuy() {
+            const input = document.getElementById('buyCountInput');
+            const card = input.value.trim();
+            // 验证卡密格式（16位，含3个短横线）
+            if (/^\w{4}-\w{4}-\w{4}-\w{4}$/.test(card)) {
+                alert(`卡密验证成功！已为您解锁全部功能~`);
+                closeBuyModal();
+            } else {
+                alert('请输入正确的卡密！');
+            }
+        }
+        // 打开支付宝（唤起APP，失败提示手动打开）
+        function openAlipay() {
+            // 支付宝官方唤起协议，优先打开本地APP
+            window.open('alipays://', '_blank');
+            setTimeout(() => {
+                alert('若未自动打开支付宝，请手动打开APP扫码支付~');
+            }, 800);
+        }
+        // 打开微信（唤起APP，失败提示手动打开）
+        function openWeChat() {
+            // 微信官方唤起协议，优先打开本地APP
+            window.open('weixin://', '_blank');
+            setTimeout(() => {
+                alert('若未自动打开微信，请手动打开APP扫码支付~');
+            }, 800);
+        }
+        // 页面加载生成粒子
+        window.onload = createParticles;
+    </script>
+</body>
+</html>

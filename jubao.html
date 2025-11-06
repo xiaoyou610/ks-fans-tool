@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务办理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        body {
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+        }
+        /* 新增顶部标题样式 */
+        .page-title {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .page-title h1 {
+            font-size: 28px; /* 中大号字体 */
+            color: #00ffff;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 0 0 25px rgba(255, 0, 255, 0.5);
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        /* 弹幕容器 */
+        .danmu-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none; /* 不影响页面点击交互 */
+        }
+        .danmu {
+            position: absolute;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0.9;
+            text-shadow: 0 0 8px rgba(255,0,0,0.6); /* 红色阴影契合快手风格 */
+            animation: danmuMove linear infinite;
+        }
+        @keyframes danmuMove {
+            from { transform: translateX(100vw); }
+            to { transform: translateX(-100%); }
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 255, 255, 0.2);
+        }
+        /* 快手Logo装饰 */
+        .decor {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        .kuaishou-logo {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 15px rgba(255, 0, 0, 0.7));
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #ff00ff;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+        }
+        .select-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        select {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #00ffff;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        select:focus {
+            border-color: #ff00ff;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.5);
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px; /* 与下方卡密模块留间距 */
+        }
+        button {
+            flex: 1;
+            padding: 12px 0;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255, 0, 255, 0.5);
+            filter: brightness(1.1);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        /* 未解锁按钮样式（增强区分度） */
+        button:disabled {
+            background: linear-gradient(45deg, #444444, #666666);
+            color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            filter: none;
+            position: relative;
+        }
+        /* 未解锁按钮添加“未解锁”提示（hover显示） */
+        button:disabled::after {
+            content: "（未解锁）";
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        button:disabled:hover::before {
+            content: "请先验证卡密";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        /* 卡密验证模块 */
+        .card-key-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(0, 255, 255, 0.3); /* 分隔线 */
+        }
+        .card-key-title {
+            font-size: 18px;
+            color: #00ffff;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+        }
+        .card-key-group {
+            display: flex;
+            gap: 15px;
+        }
+        #cardKeyInput {
+            flex: 3; /* 输入框占3份 */
+        }
+        #cardKeyBtn {
+            flex: 1; /* 按钮占1份 */
+            padding: 0; /* 清除默认内边距，继承父级padding */
+        }
+        /* 公告弹窗样式 */
+        .notice-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 255, 255, 0.4);
+        }
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 10px;
+        }
+        .modal-desc {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .modal-close {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .modal-close:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 4px 15px rgba(255, 0, 255, 0.3);
+        }
+        /* 购买卡密弹窗样式 */
+        #buyCardModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none; /* 默认隐藏 */
+            align-items: center;
+            justify-content: center;
+        }
+        #buyCardContent {
+            background: #fff;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+        }
+        .pay-code-group {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .pay-code-item {
+            width: 45%;
+        }
+        .pay-code-img {
+            width: 100%;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 5px;
+            object-fit: contain;
+            height: 150px; /* 固定高度确保两张图片大小一致 */
+        }
+        .pay-desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+        .pay-btn-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0 10px;
+        }
+        .pay-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #wechatBtn {
+            background: #2DC100;
+        }
+        #alipayBtn {
+            background: #1677FF;
+        }
+        .buy-desc {
+            font-size: 13px;
+            color: #999;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <!-- 弹幕容器 -->
+    <div class="danmu-container" id="danmuContainer"></div>
+    <!-- 公告弹窗 -->
+    <div class="notice-modal" id="noticeModal">
+        <div class="modal-content">
+            <h3 class="modal-title">📢 合规使用提示</h3>
+            <div class="modal-desc">
+                1. 此软件仅供学习交流使用，严禁用于非法用途，否则使用者自行承担全部法律责任；<br><br>
+                2. 请勿利用本软件侵犯他人权益、违反平台规则或国家法律法规，违规使用将立即封禁权限；<br><br>
+                3. 仅限个人非商业用途使用，请熟知
+            </div>
+            <button class="modal-close" onclick="closeModal()">我已阅读并同意</button>
+        </div>
+    </div>
+    <!-- 购买卡密弹窗 -->
+    <div id="buyCardModal">
+        <div id="buyCardContent">
+            <h3 class="modal-title">💸 购买卡密</h3>
+            <div class="pay-code-group">
+                <!-- 微信收款码 -->
+                <div class="pay-code-item">
+                    <img src="https://i.imgs.ovh/2025/10/27/7lBAQA.jpeg" alt="微信收款码" class="pay-code-img">
+                    <p class="pay-desc">微信扫码购买</p>
+                </div>
+                <!-- 支付宝收款码 -->
+                <div class="pay-code-item">
+                    <img src="https://i.imgs.ovh/2025/10/27/7lBkfH.jpeg" alt="支付宝收款码" class="pay-code-img">
+                    <p class="pay-desc">支付宝扫码购买</p>
+                </div>
+            </div>
+            <div class="pay-btn-group">
+                <button class="pay-btn" id="wechatBtn" onclick="openWechat()">打开微信</button>
+                <button class="pay-btn" id="alipayBtn" onclick="openAlipay()">打开支付宝</button>
+            </div>
+            <p class="buy-desc">长按即可保存图片，支付后自动获取卡密<br>天卡=10.00💰<br>周卡=20.00💰<br>永久卡=35.00💰</p>
+            <button class="modal-close" style="margin-top: 15px;" onclick="closeBuyCardModal()">关闭</button>
+        </div>
+    </div>
+    <!-- 页面主体：新增顶部标题 + 原有容器 -->
+    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+        <!-- 新增顶部中大号标题 -->
+        <div class="page-title">
+            <h1>✨ 多平台一键丰号✨</h1>
+        </div>
+        <!-- 原有内容容器 -->
+        <div class="container">
+            <!-- 快手Logo -->
+            <div class="decor">
+                <img src="https://cdn-icons-png.flaticon.com/512/2906/2906245.png" alt="快手Logo" class="kuaishou-logo">
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="请输入对方账号">
+            </div>
+            <div class="select-group">
+                <select>
+                    <option value="">块瘦</option>
+                    <option value="1">斗音</option>
+                    <option value="2">QQ</option>
+                    <option value="3">微信</option>
+                </select>
+                <select>
+                    <option value="">慢</option>
+                    <option value="1">中</option>
+                    <option value="2">快</option>
+                    <option value="3">超快</option>
+                </select>
+            </div>
+            <!-- 按钮组 -->
+            <div class="btn-group">
+                <button id="btn1" disabled onclick="runFunction(1)">一键举报</button>
+                <button id="btn2" disabled onclick="runFunction(2)">备用</button>
+                <button id="btn3" onclick="openBuyCardModal()">购买卡密</button>
+            </div>
+            <!-- 卡密验证模块 -->
+            <div class="card-key-section">
+                <h4 class="card-key-title">🔑 请验证卡密</h4>
+                <div class="card-key-group">
+                    <input type="text" id="cardKeyInput" placeholder="输入卡密（支持字母/数字组合）">
+                    <button id="cardKeyBtn" onclick="verifyCardKey()">确认</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 关闭公告弹窗
+        function closeModal() {
+            document.getElementById('noticeModal').style.display = 'none';
+        }
+
+        // 打开购买卡密弹窗
+        function openBuyCardModal() {
+            document.getElementById('buyCardModal').style.display = 'flex';
+        }
+
+        // 关闭购买卡密弹窗
+        function closeBuyCardModal() {
+            document.getElementById('buyCardModal').style.display = 'none';
+        }
+
+        // 打开微信（模拟跳转提示）
+        function openWechat() {
+            alert('未成功打开微信，请自行打开～');
+        }
+
+        // 打开支付宝（模拟跳转提示）
+        function openAlipay() {
+            alert('未成功打开支付宝，请自行打开～');
+        }
+
+        // 全局变量：标记卡密是否验证成功
+        let isCardKeyVerified = false;
+
+        // 卡密验证功能（正确卡密：030303）
+        function verifyCardKey() {
+            const cardKey = document.getElementById('cardKeyInput').value.trim();
+            if (!cardKey) {
+                alert('请输入卡密后再验证！');
+                return;
+            }
+            if (cardKey === "030303") {
+                alert(`卡密 "${cardKey}" 验证成功！已解锁全部功能～`);
+                document.getElementById('cardKeyInput').value = '';
+                isCardKeyVerified = true;
+                // 解锁前两个按钮
+                document.getElementById('btn1').disabled = false;
+                document.getElementById('btn2').disabled = false;
+            } else {
+                alert('卡密错误！请输入正确卡密');
+            }
+        }
+
+        // 按钮功能执行
+        function runFunction(btnNum) {
+            if ((btnNum === 1 || btnNum === 2) && !isCardKeyVerified) {
+                alert('请先验证卡密解锁功能！');
+                return;
+            }
+
+            switch(btnNum) {
+                case 1:
+                    alert("核心功能已启动！背景粒子效果将增强～");
+                    break;
+                case 2:
+                    alert("数据加载完成！可在输入框中填写内容～");
+                    document.querySelector('.form-group input').placeholder = "已加载示例：请输入内容...";
+                    break;
+            }
+        }
+
+        // 弹幕功能
+        const danmuContainer = document.getElementById('danmuContainer');
+        const userNames = [
+            "小宇", "阿泽", "琪琪", "浩然", "嘉怡", "子轩", "雨桐", "博文",
+            "小可爱", "小太阳", "风之翼", "星闪耀", "云之端", "月之华",
+            "星辰大海", "春暖花开", "夏日清风", "秋日私语",
+            "温柔以待之", "山河皆无恙", "人间烟火气",
+            "星河万顷浪漫", "人间烟火寻常"
+        ];
+        const danmuColors = [
+            "#ff3333", "#ff6666", "#ff9999", "#ffff66", "#ffcc66"
+        ];
+
+        function createDanmu() {
+            const danmu = document.createElement('div');
+            danmu.className = 'danmu';
+            const randomName = userNames[Math.floor(Math.random() * userNames.length)];
+            danmu.textContent = `${randomName} 用户刚刚成功激活该软件`;
+            danmu.style.color = danmuColors[Math.floor(Math.random() * danmuColors.length)];
+            const isTopArea = Math.random() > 0.5;
+            let top = isTopArea 
+                ? Math.random() * (window.innerHeight * 0.25) 
+                : window.innerHeight * 0.75 + Math.random() * (window.innerHeight * 0.25);
+            danmu.style.top = `${top}px`;
+            const duration = 6 + Math.random() * 6;
+            danmu.style.animationDuration = `${duration}s`;
+            danmuContainer.appendChild(danmu);
+            setTimeout(() => danmu.remove(), duration * 1000);
+        }
+
+        setInterval(createDanmu, 800 + Math.random() * 700);
+
+        // 炫彩粒子+雨点聚集效果
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let rainDrops = [];
+        let mouse = { x: null, y: null };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        window.addEventListener('click', (e) => {
+            if (!document.getElementById('noticeModal').contains(e.target)) {
+                for (let i = 0; i < 30; i++) {
+                    rainDrops.push({
+                        x: e.x + (Math.random() - 0.5) * 100,
+                        y: e.y + (Math.random() - 0.5) * 100,
+                        size: Math.random() * 3 + 1,
+                        speedX: (e.x - (e.x + (Math.random() - 0.5) * 100)) / 20,
+                        speedY: (e.y - (e.y + (Math.random() - 0.5) * 100)) / 20,
+                        color: `hsl(${Math.random() * 360}, 100%, 70%)`,
+                        alpha: 1
+                    });
+                }
+            }
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+                if (mouse.x && mouse.y) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        this.speedX += dx / 200;
+                        this.speedY += dy / 200;
+                    }
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 200; i++) particles.push(new Particle());
+        }
+        initParticles();
+
+        function updateRainDrops() {
+            for (let i = rainDrops.length - 1; i >= 0; i--) {
+                const drop = rainDrops[i];
+                drop.x += drop.speedX;
+                drop.y += drop.speedY;
+                drop.alpha -= 0.02;
+                if (drop.alpha <= 0) rainDrops.splice(i, 1);
+            }
+        }
+
+        function drawRainDrops() {
+            rainDrops.forEach(drop => {
+                ctx.beginPath();
+                ctx.arc(drop.x, drop.y, drop.size, 0, Math.PI * 2);
+                ctx.fillStyle = `${drop.color}80`;
+                ctx.fill();
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            updateRainDrops();
+            drawRainDrops();
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>

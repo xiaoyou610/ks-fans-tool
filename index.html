@@ -19,6 +19,41 @@ body {
   position: relative;
 }
 
+/* 音频控制按钮样式 */
+#musicBtn {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 212, 255, 0.2);
+  border: 2px solid #00d4ff;
+  color: #00d4ff;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+}
+#musicBtn:hover {
+  background: rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+}
+#musicBtn.muted {
+  border-color: #8a9aa8;
+  color: #8a9aa8;
+  box-shadow: 0 0 5px rgba(138, 154, 168, 0.3);
+  background: rgba(138, 154, 168, 0.1);
+}
+#musicBtn.muted:hover {
+  background: rgba(138, 154, 168, 0.2);
+}
+
 /* 流星雨背景动画 */
 .meteor-bg {
   position: fixed;
@@ -212,6 +247,15 @@ body {
 </head>
 
 <body>
+<!-- 音频元素，自动播放 -->
+<audio id="bgMusic" autoplay loop>
+  <source src="123.mp3" type="audio/mpeg">
+  您的浏览器不支持音频元素。
+</audio>
+
+<!-- 音乐开关按钮 -->
+<button id="musicBtn" title="点击关闭/开启背景音乐">♪</button>
+
 <!-- 流星雨背景 -->
 <div class="meteor-bg" id="meteorBg"></div>
 
@@ -248,7 +292,7 @@ body {
 <div class="mask" id="wxMask" style="display:none">
   <div class="modal-box">
     <div style="font-size:18px;color:#00ddff;margin-bottom:16px;text-align:center;font-weight:600;">联系客服</div>
-    <div style="margin-bottom:16px;text-align:center;">如有需求可添加客服微信，一对一为您服务</div>
+    <div style="margin-bottom:16px;text-align:center;">如有需求可截屏添加客服微信，一对一为您服务</div>
     <img src="https://img.cdn1.vip/i/69aea47b8509a_1773053051.webp" 
          style="width:180px;margin:0 auto;display:block;border-radius:12px;box-shadow:0 0 20px rgba(0,212,255,0.2);" alt="微信二维码">
     <br>
@@ -262,9 +306,6 @@ body {
     <div style="color:#00ddff; font-size:18px; margin-bottom:16px; text-align:center;font-weight:600;">账号申诉找回服务证明</div>
     <div style="margin-bottom:10px;">出具单位：手游账号服务中心</div>
     <div style="margin-bottom:16px;">涉及游戏：《超自然行动组》</div>
-
-    <div style="margin-bottom:10px;">账号情况：</div>
-    <div style="margin-bottom:16px;">客户因账号被盗、密码被恶意修改、解绑手机号，无法正常登录，现委托我方提供账号申诉找回协助服务。</div>
 
     <div style="margin-bottom:10px;">一、服务流程与说明</div>
     <div>1. 客户需自行提供账号工号、主页截图等相关资料，确保真实有效。</div>
@@ -321,6 +362,52 @@ body {
 </div>
 
 <script>
+// 页面加载后，初始化音频控制逻辑
+window.onload = function() {
+  const bgMusic = document.getElementById('bgMusic');
+  const musicBtn = document.getElementById('musicBtn');
+
+  // 尝试自动播放音频（浏览器可能阻止，这里提供一个兜底处理）
+  const playPromise = bgMusic.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(error => {
+      console.log("自动播放被浏览器阻止。用户需要与页面交互后才能播放。");
+      // 可以将按钮初始状态设置为静音，提示用户点击开启
+      musicBtn.textContent = '🔇';
+      musicBtn.classList.add('muted');
+    });
+  }
+
+  // 点击按钮控制音乐播放/暂停
+  musicBtn.onclick = function() {
+    if (bgMusic.paused) {
+      bgMusic.play();
+      musicBtn.textContent = '♪';
+      musicBtn.classList.remove('muted');
+    } else {
+      bgMusic.pause();
+      musicBtn.textContent = '🔇';
+      musicBtn.classList.add('muted');
+    }
+  };
+
+  // 初始化按钮状态显示
+  function updateButtonState() {
+    if (bgMusic.paused) {
+      musicBtn.textContent = '🔇';
+      musicBtn.classList.add('muted');
+    } else {
+      musicBtn.textContent = '♪';
+      musicBtn.classList.remove('muted');
+    }
+  }
+  // 监听音频播放状态变化
+  bgMusic.addEventListener('play', updateButtonState);
+  bgMusic.addEventListener('pause', updateButtonState);
+  // 初始化
+  updateButtonState();
+};
+
 // 生成流星雨
 function createMeteors() {
   const bg = document.getElementById('meteorBg');

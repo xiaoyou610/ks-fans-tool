@@ -249,7 +249,7 @@ body {
 <body>
 <!-- 音频元素，自动播放 -->
 <audio id="bgMusic" autoplay loop>
-  <source src="123.mp3" type="audio/mpeg">
+  <source src="1.mp3" type="audio/mpeg">
   您的浏览器不支持音频元素。
 </audio>
 
@@ -262,7 +262,7 @@ body {
 <!-- 公告弹窗 -->
 <div class="mask" id="noticeMask">
   <div class="notice-box">
-    <button id="closeNotice" disabled>×</button>
+    <button class="close-btn" id="closeNotice" disabled>3</button>
     <div class="notice-title">公告</div>
     <div class="notice-line"></div>
     <div class="notice-content">
@@ -286,6 +286,9 @@ body {
   <button class="btn" onclick="showNotice1()">找回必看</button>
   <button class="btn" onclick="showNotice2()">推广福利</button>
   <button class="btn" onclick="showAbout()">关于我们</button>
+
+  <!-- 新增的官方测试按钮 -->
+  <button onclick="window.open('./1.html', '_self')" style="margin-top: 20px; padding: 4px 8px; font-size: 12px; color: #8a9aa8; background: transparent; border: 1px solid #8a9aa8; border-radius: 4px; cursor: pointer;">官方测试</button>
 </div>
 
 <!-- 微信客服弹窗 -->
@@ -367,12 +370,12 @@ window.onload = function() {
   const bgMusic = document.getElementById('bgMusic');
   const musicBtn = document.getElementById('musicBtn');
 
-  // 尝试自动播放音频（浏览器可能阻止，这里提供一个兜底处理）
+  // 初始化时尝试自动播放（可能被浏览器阻止）
   const playPromise = bgMusic.play();
   if (playPromise !== undefined) {
     playPromise.catch(error => {
-      console.log("自动播放被浏览器阻止。用户需要与页面交互后才能播放。");
-      // 可以将按钮初始状态设置为静音，提示用户点击开启
+      console.log("页面加载自动播放被浏览器阻止。等待公告关闭时触发。");
+      // 可以将按钮初始状态设置为静音
       musicBtn.textContent = '🔇';
       musicBtn.classList.add('muted');
     });
@@ -435,10 +438,26 @@ let timer = setInterval(()=>{
   }
 },1000);
 
-// 关闭公告，显示主界面
+// 关闭公告，显示主界面，并自动播放音乐
 closeBtn.onclick = function(){
+  // 隐藏公告弹窗
   document.getElementById('noticeMask').style.display = 'none';
+  // 显示主界面
   document.getElementById('main').style.display = 'block';
+
+  // 新增逻辑：自动播放音乐
+  const bgMusic = document.getElementById('bgMusic');
+  const musicBtn = document.getElementById('musicBtn');
+  // 尝试播放音乐
+  const playPromise = bgMusic.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(error => {
+      console.log("自动播放被浏览器阻止。可能需要用户交互。");
+    });
+  }
+  // 更新音乐控制按钮状态
+  musicBtn.textContent = '♪';
+  musicBtn.classList.remove('muted');
 }
 
 // 客服微信

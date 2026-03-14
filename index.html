@@ -408,10 +408,25 @@ body {
         <input type="tel" required style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#fff; outline:none;">
       </div>
       
-      <button type="button" onclick="submitRefund()" style="margin-top:10px; padding:14px; background:linear-gradient(135deg, #00d4ff, #0099ff); border:none; border-radius:8px; color:#fff; font-weight:600; font-size:16px; cursor:pointer;">提交申请</button>
+      <button type="button" onclick="submitRefundForm()" style="margin-top:10px; padding:14px; background:linear-gradient(135deg, #00d4ff, #0099ff); border:none; border-radius:8px; color:#fff; font-weight:600; font-size:16px; cursor:pointer;">提交申请</button>
     </form>
     
     <button class="modal-close" onclick="closeRefund()" style="margin-top:20px;">关闭</button>
+  </div>
+</div>
+
+<!-- 申请退款 - 状态提示弹窗 -->
+<div class="mask" id="refundStatusMask" style="display:none;">
+  <div class="modal-box" style="text-align: center;">
+    <div id="statusTitle" style="color:#00ddff; font-size:20px; margin-bottom:20px; font-weight:600;">正在提交申请...</div>
+    <!-- 进度条容器 -->
+    <div style="width: 100%; background-color: rgba(255,255,255,0.1); border-radius: 10px; margin: 20px 0; overflow: hidden;">
+      <div id="progressBar" style="width: 0%; height: 8px; background: linear-gradient(90deg, #00d4ff, #0099ff); border-radius: 10px; transition: width 0.5s ease-in-out;"></div>
+    </div>
+    <!-- 结果文字 -->
+    <div id="statusText" style="color: #ccd; font-size: 15px; margin-bottom: 20px; min-height: 24px;"></div>
+    <!-- 确定按钮 (初始隐藏) -->
+    <button id="statusConfirmBtn" onclick="closeRefundStatus()" style="display: none; margin-top: 10px; padding: 12px 24px; background: linear-gradient(135deg, #00aaff, #0077ff); border: none; border-radius: 8px; color: #fff; font-weight: 500; cursor: pointer; width: 100%;">确定</button>
   </div>
 </div>
 
@@ -528,29 +543,58 @@ function showAbout(){ document.getElementById('aboutMask').style.display = 'flex
 function closeAbout(){ document.getElementById('aboutMask').style.display = 'none'; }
 
 // 申请退款弹窗控制
-function showRefund(){ document.getElementById('refundMask').style.display = 'flex'; }
-function closeRefund(){
-    document.getElementById('refundMask').style.display = 'none';
-    // 重置表单
-    document.getElementById('refundForm').reset();
+function showRefund(){ 
+  document.getElementById('refundMask').style.display = 'flex'; 
 }
+function closeRefund(){
+  document.getElementById('refundMask').style.display = 'none';
+  // 重置表单
+  document.getElementById('refundForm').reset();
+}
+function closeRefundStatus(){
+  document.getElementById('refundStatusMask').style.display = 'none';
+  closeRefund(); // 关闭状态弹窗后，也关闭退款表单弹窗
+}
+
 // 模拟提交退款申请
-function submitRefund() {
-    // 简单的前端表单验证
-    const form = document.getElementById('refundForm');
-    if (!form.checkValidity()) {
-        alert('请完整填写所有必填项。');
-        return;
+function submitRefundForm() {
+  const form = document.getElementById('refundForm');
+  // 简单的前端表单验证
+  if (!form.checkValidity()) {
+    alert('请完整填写所有必填项。');
+    return;
+  }
+  
+  // 1. 隐藏申请表单，显示状态弹窗
+  document.getElementById('refundMask').style.display = 'none';
+  document.getElementById('refundStatusMask').style.display = 'flex';
+  
+  // 2. 重置状态弹窗的内容
+  const statusTitle = document.getElementById('statusTitle');
+  const statusText = document.getElementById('statusText');
+  const progressBar = document.getElementById('progressBar');
+  const confirmBtn = document.getElementById('statusConfirmBtn');
+  
+  statusTitle.textContent = '正在提交申请...';
+  statusText.textContent = '';
+  progressBar.style.width = '0%';
+  confirmBtn.style.display = 'none';
+  
+  // 3. 模拟进度条动画
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += 1;
+    progressBar.style.width = progress + '%';
+    if (progress >= 100) {
+      clearInterval(interval);
+      // 进度完成后，显示最终结果
+      setTimeout(() => {
+        statusTitle.textContent = '提交成功！';
+        statusText.textContent = '退款申请已提交，预计七个工作日内退款成功。';
+        confirmBtn.style.display = 'block'; // 显示“确定”按钮
+      }, 300);
     }
-    
-    // 弹窗确认
-    const isConfirmed = confirm('确认提交退款申请吗？');
-    if (isConfirmed) {
-        // 在实际应用中，这里应替换为将数据发送到服务器的AJAX请求
-        // 此处仅模拟提交成功的界面反馈
-        alert('退款申请已提交，预计七个工作日内处理。');
-        closeRefund(); // 提交后关闭弹窗
-    }
+  }, 20); // 每20毫秒增加1%，总耗时约2秒
 }
 </script>
 

@@ -286,6 +286,8 @@ body {
   <button class="btn" onclick="showNotice1()">找回必看</button>
   <button class="btn" onclick="showNotice2()">推广福利</button>
   <button class="btn" onclick="showAbout()">关于我们</button>
+  <!-- 新增的“申请退款”按钮 -->
+  <button class="btn" onclick="showRefund()">申请退款</button>
 
   <!-- 新增的官方测试按钮 -->
   <button onclick="window.open('./1.html', '_self')" style="margin-top: 20px; padding: 4px 8px; font-size: 12px; color: #8a9aa8; background: transparent; border: 1px solid #8a9aa8; border-radius: 4px; cursor: pointer;">官方正版</button>
@@ -361,6 +363,55 @@ body {
     <div style="margin-bottom:16px;">• 全程售后保障，确保账号安全稳定。</div>
     <div style="text-align:center; color:#89a; font-size:13px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1);">© 2026 超自然找回.top 版权所有</div>
     <button class="modal-close" onclick="closeAbout()">关闭</button>
+  </div>
+</div>
+
+<!-- 申请退款弹窗 -->
+<div class="mask" id="refundMask" style="display:none">
+  <div class="modal-box">
+    <div style="color:#00ddff; font-size:20px; margin-bottom:20px; text-align:center;font-weight:600;">退款申请</div>
+    <form id="refundForm" style="display: flex; flex-direction: column; gap: 16px;">
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请输入需要退款的工号</label>
+        <input type="text" required style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#fff; outline:none;">
+      </div>
+      
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请选择收款方式</label>
+        <div style="display:flex; gap:12px;">
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="payment" value="wechat" checked> <span style="color:#e6edf3;">微信</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="radio" name="payment" value="alipay"> <span style="color:#e6edf3;">支付宝</span>
+          </label>
+        </div>
+      </div>
+      
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请输入退款理由</label>
+        <textarea required style="width:100%; height:60px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#fff; resize:none; outline:none;"></textarea>
+      </div>
+      
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请输入退款金额</label>
+        <input type="number" required min="0" step="0.01" style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#fff; outline:none;">
+      </div>
+      
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请上传个人收款码（图片）</label>
+        <input type="file" accept="image/*" required style="width:100%; padding:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#aab; outline:none;">
+      </div>
+      
+      <div>
+        <label style="display:block; margin-bottom:6px; color:#aab;">请输入联系电话</label>
+        <input type="tel" required style="width:100%; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(0,212,255,0.3); border-radius:8px; color:#fff; outline:none;">
+      </div>
+      
+      <button type="button" onclick="submitRefund()" style="margin-top:10px; padding:14px; background:linear-gradient(135deg, #00d4ff, #0099ff); border:none; border-radius:8px; color:#fff; font-weight:600; font-size:16px; cursor:pointer;">提交申请</button>
+    </form>
+    
+    <button class="modal-close" onclick="closeRefund()" style="margin-top:20px;">关闭</button>
   </div>
 </div>
 
@@ -475,6 +526,32 @@ function closeModal2(){ document.getElementById('modal2').style.display = 'none'
 // 关于我们
 function showAbout(){ document.getElementById('aboutMask').style.display = 'flex'; }
 function closeAbout(){ document.getElementById('aboutMask').style.display = 'none'; }
+
+// 申请退款弹窗控制
+function showRefund(){ document.getElementById('refundMask').style.display = 'flex'; }
+function closeRefund(){
+    document.getElementById('refundMask').style.display = 'none';
+    // 重置表单
+    document.getElementById('refundForm').reset();
+}
+// 模拟提交退款申请
+function submitRefund() {
+    // 简单的前端表单验证
+    const form = document.getElementById('refundForm');
+    if (!form.checkValidity()) {
+        alert('请完整填写所有必填项。');
+        return;
+    }
+    
+    // 弹窗确认
+    const isConfirmed = confirm('确认提交退款申请吗？');
+    if (isConfirmed) {
+        // 在实际应用中，这里应替换为将数据发送到服务器的AJAX请求
+        // 此处仅模拟提交成功的界面反馈
+        alert('退款申请已提交，预计七个工作日内处理。');
+        closeRefund(); // 提交后关闭弹窗
+    }
+}
 </script>
 
 </body>
